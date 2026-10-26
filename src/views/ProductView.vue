@@ -3,7 +3,7 @@ import { ref, watch } from 'vue'
 import { useQuery } from '@vue/apollo-composable'
 import { GET_PRODUCTS } from '@/graphql/products/queries'
 
-interface Product {
+export type Product = {
   id: number
   sku: string
   name: string
