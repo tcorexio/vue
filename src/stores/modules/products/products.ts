@@ -1,5 +1,5 @@
-import type { Product } from '@/views/ProductView.vue'
-import { createStore } from 'vuex/types/index.js'
+import type { Product } from '@/types/product'
+import { createStore } from 'vuex'
 
 const store = createStore({
   state: {

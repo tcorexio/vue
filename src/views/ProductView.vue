@@ -1,17 +1,10 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { useQuery } from '@vue/apollo-composable'
+import { useMutation, useQuery } from '@vue/apollo-composable'
+import { useRouter } from 'vue-router'
 import { GET_PRODUCTS } from '@/graphql/products/queries'
-
-export type Product = {
-  id: number
-  sku: string
-  name: string
-  slug: string
-  category?: {
-    name: string
-  } | null
-}
+import { DELETE_PRODUCT } from '@/graphql/products/mutations'
+import type { Product } from '@/types/product'
 
 const keyword = ref('')
 const page = ref(1)
@@ -22,9 +15,24 @@ const { result, loading, error } = useQuery(GET_PRODUCTS, () => ({
   page: page.value,
   q: keyword.value || undefined,
 }))
+const router = useRouter()
+const { mutate: deleteProduct } = useMutation(DELETE_PRODUCT)
 
 const products = ref<Product[]>([])
 const total = ref(0)
+const deletingId = ref<number | null>(null)
+
+async function removeProduct(product: Product) {
+  if (!window.confirm(`Delete "${product.name}"?`)) return
+  deletingId.value = product.id
+  try {
+    await deleteProduct({ id: product.id })
+    products.value = products.value.filter((item) => item.id !== product.id)
+    total.value = Math.max(0, total.value - 1)
+  } finally {
+    deletingId.value = null
+  }
+}
 
 watch(
   result,
@@ -49,7 +57,7 @@ watch(
           <span class="button-icon">↓</span>
           Export
         </button>
-        <button class="button button-primary" type="button">
+        <button class="button button-primary" type="button" @click="router.push({ name: 'product-new' })">
           <span class="button-icon">+</span>
           Add product
         </button>
@@ -150,7 +158,7 @@ watch(
                 <div class="product-name">
                   <span class="product-avatar">{{ product.name.charAt(0) }}</span>
                   <div>
-                    <strong>{{ product.name }}</strong>
+                    <button class="product-link" type="button" @click="router.push({ name: 'product-edit', params: { id: product.id } })">{{ product.name }}</button>
                     <small>{{ product.slug }}</small>
                   </div>
                 </div>
@@ -160,10 +168,10 @@ watch(
               </td>
               <td>{{ product.category?.name ?? 'Uncategorized' }}</td>
               <td>
-                <span class="status"><i></i> Published</span>
+                <span class="status"><i></i> {{ product.status ?? 'draft' }}</span>
               </td>
               <td class="action-cell">
-                <button class="more-button" type="button" aria-label="More options">•••</button>
+                <button class="more-button" type="button" :disabled="deletingId === product.id" aria-label="Delete product" @click="removeProduct(product)">×</button>
               </td>
             </tr>
           </tbody>
@@ -573,6 +581,27 @@ input[type='checkbox'] {
   white-space: nowrap;
 }
 
+.product-link {
+  background: transparent;
+  border: 0;
+  color: #30394c;
+  cursor: pointer;
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  max-width: 260px;
+  overflow: hidden;
+  padding: 0;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-link:hover {
+  color: #7669e5;
+}
+
 .product-name small {
   color: #a4a9b5;
   font-size: 10px;
@@ -613,6 +642,11 @@ input[type='checkbox'] {
   border: 0;
   color: #a5aab7;
   letter-spacing: 2px;
+}
+
+.more-button:disabled {
+  cursor: wait;
+  opacity: 0.5;
 }
 
 .table-message {
