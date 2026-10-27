@@ -75,6 +75,42 @@ watch(searchText, (newValue) => {
   }
 })
 
+watch(
+  () => cart.value[1],
+  (newValue) => {
+    const product = cart.value[1]
+
+    if (product && newValue !== undefined && newValue.quantity < 1) {
+      product.quantity = 1
+    }
+  },
+)
+
+watch([firstName, lastName], (newValues, oldValues) => {
+  const [newValueFirst, newValueLast] = newValues
+  const [oldValueFirst, oldValueLast] = oldValues
+
+  console.log(newValueFirst + '+' + newValueLast)
+  console.log(oldValueFirst + '+' + oldValueLast)
+
+  nameChangedMessage.value = newValueFirst + newValueLast
+})
+
+// Default
+const count = ref(0)
+watch(count, (newValue, oldValue) => {
+  console.log(newValue, oldValue)
+})
+
+// Immediate
+watch(
+  count,
+  (newValue, oldvalue) => {
+    console.log(newValue, oldvalue)
+  },
+  { immediate: true },
+)
+
 // TODO 1: computed fullName
 
 // TODO 2: computed fullNameUppercase
